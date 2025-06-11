@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title id="site-title">SCP ОЦЕНОЧНАЯ СИСТЕМА</title>
+  <title id="site-title">Extend</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
     
@@ -80,6 +80,18 @@
       cursor: pointer;
     }
     
+    .questions-container {
+      position: relative;
+      height: 400px;
+      overflow: hidden;
+    }
+    
+    .questions-wrapper {
+      display: flex;
+      transition: transform 0.5s ease-in-out;
+      height: 100%;
+    }
+    
     .question {
       margin-bottom: 20px;
       padding: 15px;
@@ -89,6 +101,9 @@
       box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
       position: relative;
       overflow: hidden;
+      min-width: 100%;
+      flex-shrink: 0;
+      box-sizing: border-box;
     }
     
     .question::before {
@@ -293,6 +308,23 @@
       cursor: pointer;
       z-index: 101;
     }
+    
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    
+    .nav-btn {
+      padding: 8px 15px;
+      font-size: 14px;
+    }
+    
+    .page-indicator {
+      text-align: center;
+      margin: 10px 0;
+      color: #0f0;
+    }
   </style>
 </head>
 <body>
@@ -304,16 +336,25 @@
   
   <div class="settings-panel" id="settingsPanel">
     <h3>НАСТРОЙКИ СИСТЕМЫ</h3>
-    <label>load...</label>
+    <label>Название сайта:</label>
     <input type="text" id="siteNameInput" value="SCP ОЦЕНОЧНАЯ СИСТЕМА">
     <button onclick="updateSiteTitle()">Применить</button>
   </div>
 
-  <h1 id="main-header">Помощь в баллах</h1>
+  <h1 id="main-header">SCP ОЦЕНОЧНАЯ СИСТЕМА</h1>
   
-  <div id="questions">
-    <!-- Вопросы будут добавляться здесь -->
+  <div class="questions-container">
+    <div class="questions-wrapper" id="questionsWrapper">
+      <!-- Вопросы будут добавляться здесь -->
+    </div>
   </div>
+  
+  <div class="nav-buttons">
+    <button class="nav-btn" onclick="prevQuestion()">← ПРЕДЫДУЩИЙ</button>
+    <button class="nav-btn" onclick="nextQuestion()">СЛЕДУЮЩИЙ →</button>
+  </div>
+  
+  <div class="page-indicator" id="pageIndicator">ТЕСТ 1 из 1</div>
 
   <div style="text-align: center;">
     <button onclick="addQuestion()">ДОБАВИТЬ ТЕСТ</button>
@@ -326,32 +367,57 @@
 
   <script>
     let questionCount = 0;
+    let currentQuestion = 0;
     const floatingWords = [
       "Чумовой MRP", "default.java", "Мак", "Опасный дед", 
       "Чумовой док", "Войд слива", "Найтамар", "Hidee",
-      "РАБОТАТЬ", "MRP", "HRP", "NR", "SCP", "███", "█▄█"
+      "РАБОТАТЬ", "MRP", "HRP", "NR", "SCP", "███", "█▄█",
+      "Mokkich", "str1kez", "ACCESS DENIED", "CLASSIFIED",
+      "WARNING", "ALERT", "DANGER", "CONTAINMENT BREACH",
+      "KETER", "EUCLID", "SAFE", "THAUMIEL"
     ];
 
     // Создаем SCP элементы фона
     function createSCPElements() {
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 30; i++) { // Увеличил количество элементов
         const element = document.createElement('div');
         element.className = 'scp-element';
         element.textContent = floatingWords[Math.floor(Math.random() * floatingWords.length)];
         element.style.left = Math.random() * 100 + 'vw';
         element.style.top = Math.random() * 100 + 'vh';
-        element.style.animationDuration = (10 + Math.random() * 20) + 's';
-        element.style.animationDelay = Math.random() * 5 + 's';
+        element.style.animationDuration = (5 + Math.random() * 15) + 's'; // Более частое появление
+        element.style.animationDelay = Math.random() * 3 + 's';
         element.style.fontSize = (12 + Math.random() * 12) + 'px';
         element.style.opacity = Math.random() * 0.5 + 0.1;
         document.body.appendChild(element);
       }
+      
+      // Добавляем новые элементы каждые 10 секунд
+      setInterval(() => {
+        if (document.getElementsByClassName('scp-element').length < 50) {
+          const element = document.createElement('div');
+          element.className = 'scp-element';
+          element.textContent = floatingWords[Math.floor(Math.random() * floatingWords.length)];
+          element.style.left = Math.random() * 100 + 'vw';
+          element.style.top = Math.random() * 100 + 'vh';
+          element.style.animationDuration = (5 + Math.random() * 15) + 's';
+          element.style.animationDelay = '0s';
+          element.style.fontSize = (12 + Math.random() * 12) + 'px';
+          element.style.opacity = Math.random() * 0.5 + 0.1;
+          document.body.appendChild(element);
+          
+          // Удаляем элемент после анимации
+          setTimeout(() => {
+            element.remove();
+          }, parseFloat(element.style.animationDuration) * 1000);
+        }
+      }, 2000); // Увеличил частоту появления
     }
     
     // Добавляет новый вопрос
     function addQuestion() {
       questionCount++;
-      const questionsDiv = document.getElementById("questions");
+      const questionsWrapper = document.getElementById("questionsWrapper");
       
       const newQuestion = document.createElement("div");
       newQuestion.className = "question";
@@ -362,7 +428,9 @@
         БАЛЛЫ: <input type="number" id="q${questionCount}_score" min="0" value="0">
       `;
       
-      questionsDiv.appendChild(newQuestion);
+      questionsWrapper.appendChild(newQuestion);
+      updatePageIndicator();
+      scrollToQuestion(questionCount - 1);
       
       // Эффект печатания
       const inputs = newQuestion.getElementsByTagName('input');
@@ -376,6 +444,37 @@
       }
     }
 
+    // Переход к предыдущему вопросу
+    function prevQuestion() {
+      if (currentQuestion > 0) {
+        currentQuestion--;
+        scrollToQuestion(currentQuestion);
+      }
+    }
+    
+    // Переход к следующему вопросу
+    function nextQuestion() {
+      if (currentQuestion < questionCount - 1) {
+        currentQuestion++;
+        scrollToQuestion(currentQuestion);
+      }
+    }
+    
+    // Плавная прокрутка к вопросу
+    function scrollToQuestion(index) {
+      const questionsWrapper = document.getElementById("questionsWrapper");
+      const questionWidth = questionsWrapper.children[0].offsetWidth;
+      questionsWrapper.style.transform = `translateX(-${index * questionWidth}px)`;
+      currentQuestion = index;
+      updatePageIndicator();
+    }
+    
+    // Обновление индикатора страницы
+    function updatePageIndicator() {
+      const indicator = document.getElementById("pageIndicator");
+      indicator.textContent = `ТЕСТ ${currentQuestion + 1} из ${questionCount || 1}`;
+    }
+    
     // Считает общую сумму баллов
     function calculateTotal() {
       let total = 0;
